@@ -1,9 +1,9 @@
 from django.db import models
+from decimal import Decimal
 from django.utils.crypto import get_random_string
-from decimal import Decimal  # Import Decimal
-
 from account.models import Account
 from expensetypes.models import ExpenseTypes
+
 
 class Expenses(models.Model):
     id = models.AutoField(primary_key=True)
@@ -27,7 +27,7 @@ class Expenses(models.Model):
     receipt = models.FileField(upload_to='receipts/', blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
     is_deleted = models.BooleanField(default=False)
-    amount_paid = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))  # Set default value
+    amount_paid = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'))
     remaining_balance = models.DecimalField(max_digits=15, decimal_places=2, default=Decimal('0.00'),
                                             verbose_name="Remaining Balance")
 
@@ -47,15 +47,6 @@ class Expenses(models.Model):
         self.save()
 
     def save(self, *args, **kwargs):
-        if self.expenseID == "TEMP" or not self.expenseID:
-            last_expense = Expenses.objects.order_by('-id').first()
-            if not last_expense or last_expense.expenseID == "TEMP":
-                new_expenseID = "Ex001"
-            else:
-                last_expense_number = int(last_expense.expenseID.split('Ex')[1])
-                new_expenseID = f"Ex{last_expense_number + 1:03d}"
-            self.expenseID = new_expenseID
-
         # Ensure amount_paid is not None
         if self.amount_paid is None:
             self.amount_paid = Decimal('0.00')
@@ -63,13 +54,24 @@ class Expenses(models.Model):
         # Calculate remaining balance
         self.remaining_balance = self.amount - self.amount_paid
 
+        # Generate a unique expenseID if it is still "TEMP"
+        if self.expenseID == "TEMP":
+            self.expenseID = self.generate_unique_expense_id()
+
         super().save(*args, **kwargs)
+
+    def generate_unique_expense_id(self):
+        unique_id = get_random_string(length=10)
+        while Expenses.objects.filter(expenseID=unique_id).exists():
+            unique_id = get_random_string(length=10)
+        return unique_id
 
     def __str__(self):
         return self.expenseID
 
     class Meta:
         db_table = 'expenses'
+
 
 class ExpensePayment(models.Model):
     id = models.AutoField(primary_key=True)
@@ -83,20 +85,22 @@ class ExpensePayment(models.Model):
     def save(self, *args, **kwargs):
         if not self.reference_number:
             self.reference_number = get_random_string(length=10)
+
+        # Check if there's a debited account associated with the payment
         if not self.debited_account:
             raise ValueError("No account linked to this expense")
+
+        # Ensure the debited account has sufficient funds
         if self.debited_account.balance < self.amount_paid:
             raise ValueError("Insufficient funds in the account")
 
+        # Deduct the payment amount from the debited account's balance
         self.debited_account.balance -= self.amount_paid
         self.debited_account.save()
 
-        # Ensure amount_paid is not None
-        if self.expense.amount_paid is None:
-            self.expense.amount_paid = Decimal('0.00')
-
+        # Update the corresponding expense's amount_paid field
         self.expense.amount_paid += self.amount_paid
-        self.expense.save()  # Let the Expense model handle remaining_balance update
+        self.expense.save()
 
         super().save(*args, **kwargs)
 
