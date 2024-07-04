@@ -47,9 +47,10 @@ SECRET_KEY = 'django-insecure-b5prd^t6_@jdhb=n9d0yo4=!sy9_5qs@3!%%nu@tc((bv)5%!b
 DEBUG = True
 inProd = False
 
-ALLOWED_HOSTS = [  '192.168.91.3',  'http://localhost:4200',
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    "http://localhost:8000",
 ]
-
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
@@ -85,6 +86,7 @@ INSTALLED_APPS = [
     'feeextensions',
     'expensetypes',
     'expenses',
+    'expensepayment',
     'suppliers',
     'supplierspayment',
     'fee',
@@ -166,7 +168,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'payments',
+            'NAME': 'edutech_payments_db',
             'USER': 'root',
             'PASSWORD': "",
             'HOST': '127.0.0.1',
@@ -235,3 +237,15 @@ PASS_KEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
 ACCESS_TOKEN_URL = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
 INITIATE_URL = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
 CALL_BACK_URL = "https://3db4-102-210-244-74.ngrok-free.app /MpesaCallBackURL.php"
+
+# Jenga API credentials
+api_key = 'WAH5yH10p0J9V3q+r8sDmZBFG7y/P28/CBzMRFL7eAsRYoKh8OA/o0jqbyp/cRonjWITTBTlFcsPl7HTTqpb0w=='
+api_secret = 'LU48y4cm8VX5aReR3eNlL5O6cb7En1'
+
+JENGA_CLIENT_ID = '7738920625'
+JENGA_CLIENT_SECRET = 'LU48y4cm8VX5aReR3eNlL5O6cb7En1'
+JENGA_BANK_TO_BANK_URL = 'https://uat.finserve.africa/v3-apis/transaction-api/v3.0/remittance/pesalinkacc'
+JENGA_BANK_TO_MOBILE_URL = 'https://api.finserve.africa/v3-apis/transaction-api/v3.0/remittance/pesalinkMobile'
+# Signature Formulae
+# transfer.amount+transfer.currencyCode+transfer.reference+destination.name+source.accountNumber
+
