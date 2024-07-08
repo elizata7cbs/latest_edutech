@@ -43,12 +43,3 @@ class StudentAccount(models.Model):
         # Return a string representation of the object
         return f"Student: {self.student}, Balance:{self.balance}"
 
-    @staticmethod
-    def get_next_admission_number():
-        last_student = Students.objects.order_by('id').last()
-        if last_student:
-            last_adm_number = last_student.admNumber
-            new_adm_number = int(last_adm_number) + 1
-            return str(new_adm_number).zfill(len(last_adm_number))
-        else:
-            return '0001'  # or any starting value you prefer
