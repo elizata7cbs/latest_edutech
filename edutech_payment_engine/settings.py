@@ -18,18 +18,12 @@ from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = 'media/'
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-
-# Username and password for authentication
+EMAIL_USE_TLS = True  # Use TLS
 EMAIL_HOST_USER = 'edu2024tech@gmail.com'
 EMAIL_HOST_PASSWORD = 'xglu fvkr zfzi wqyy'
-
-# Additional properties for SMTP
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False  # If you use TLS, SSL should be False
 
 # Debug email sending in Django (similar to logging level in Spring Boot)
 import logging
@@ -47,10 +41,8 @@ SECRET_KEY = 'django-insecure-b5prd^t6_@jdhb=n9d0yo4=!sy9_5qs@3!%%nu@tc((bv)5%!b
 DEBUG = True
 inProd = False
 
-ALLOWED_HOSTS = [
-    '127.0.0.1',
-    "http://localhost:8000",
-]
+ALLOWED_HOSTS = ["*"
+                 ]
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
@@ -68,10 +60,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework.authtoken',
     'rest_framework',
-    'rest_framework_jwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'drf_yasg',
-    'usergroup',
     'account',
     'users',
     'students',
@@ -86,7 +77,6 @@ INSTALLED_APPS = [
     'feeextensions',
     'expensetypes',
     'expenses',
-    'expensepayment',
     'suppliers',
     'supplierspayment',
     'fee',
@@ -96,28 +86,65 @@ INSTALLED_APPS = [
     'schools',
     # 'virtualaccounts',
     'payfee',
-    'inquiries'
+    'inquiries',
+    'usergroup',
+    'mpesa'
 
 ]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
 
-# JWT_AUTH = {
-#     'JWT_SECRET_KEY': '!q6r5u+&cfrpik7ipmfgw)k*4vrm@yiah1yr8%kb)yk1qti7e-',
-#     'JWT_EXPIRATION_DELTA': timedelta(days=1),
-#     'JWT_ALLOW_REFRESH': True,
-#     'JWT_REFRESH_EXPIRATION_DELTA': timedelta(days=7),
-# }
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': False,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=30),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}
 
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'JSON_EDITOR': True,
+}
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+
 ]
 
 ROOT_URLCONF = 'edutech_payment_engine.urls'
@@ -125,7 +152,9 @@ ROOT_URLCONF = 'edutech_payment_engine.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'frontend'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -138,17 +167,6 @@ TEMPLATES = [
     },
 ]
 
-REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # # or allow read-only access for unauthenticated users.
-    # 'DEFAULT_PERMISSION_CLASSES': [
-    #     'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    # ],
-    'DEFAULT_PAGINATION_CLASS':
-        'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
-
-}
 WSGI_APPLICATION = 'edutech_payment_engine.wsgi.application'
 
 # Database
@@ -159,7 +177,8 @@ if inProd:
     DATABASES = {
         'default': dj_database_url.config(
             # Replace this value with your local database's connection string.
-            default='postgres://edutech_s1pi_user:RPaUbLjei1XXW6gI4EQS1ZzaKLYGRunU@dpg-cnio1q7jbltc73c6k4d0-a.oregon-postgres.render.com/edutech_s1pi',
+            default='postgres://edutech_s1pi_user:RPaUbLjei1XXW6gI4EQS1ZzaKLYGRunU@dpg-cnio1q7jbltc73c6k4d0-a.oregon'
+                    '-postgres.render.com/edutech_s1pi',
             conn_max_age=600
         )
 
@@ -197,6 +216,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+)
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
@@ -214,19 +236,34 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 if not DEBUG:
-    # Tell Django to copy static assets into a path called staticfiles (this is specific to Render)
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
     # Enable the WhiteNoise storage backend, which compresses static files to reduce disk use
     # and renames the files with unique names for each version to support long-term caching
     STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+if not os.path.exists(STATIC_DIR):
+    os.makedirs(STATIC_DIR)
+
+STATICFILES_DIRS = [
+    STATIC_DIR,
+]
+
+# Other settings remain unchanged...
+
+STATIC_URL = '/static/'
+AUTH_USER_MODEL = 'users.CustomUser'
+CORS_ALLOW_ALL_ORIGINS = False
+
+if not DEBUG:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -237,15 +274,3 @@ PASS_KEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
 ACCESS_TOKEN_URL = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
 INITIATE_URL = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
 CALL_BACK_URL = "https://3db4-102-210-244-74.ngrok-free.app /MpesaCallBackURL.php"
-
-# Jenga API credentials
-api_key = 'WAH5yH10p0J9V3q+r8sDmZBFG7y/P28/CBzMRFL7eAsRYoKh8OA/o0jqbyp/cRonjWITTBTlFcsPl7HTTqpb0w=='
-api_secret = 'LU48y4cm8VX5aReR3eNlL5O6cb7En1'
-
-JENGA_CLIENT_ID = '7738920625'
-JENGA_CLIENT_SECRET = 'LU48y4cm8VX5aReR3eNlL5O6cb7En1'
-JENGA_BANK_TO_BANK_URL = 'https://uat.finserve.africa/v3-apis/transaction-api/v3.0/remittance/pesalinkacc'
-JENGA_BANK_TO_MOBILE_URL = 'https://api.finserve.africa/v3-apis/transaction-api/v3.0/remittance/pesalinkMobile'
-# Signature Formulae
-# transfer.amount+transfer.currencyCode+transfer.reference+destination.name+source.accountNumber
-
