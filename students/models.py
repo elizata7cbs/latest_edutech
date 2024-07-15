@@ -1,10 +1,12 @@
 import datetime
+import uuid
+
 from django.db import models
 
 
 class Students(models.Model):
     id = models.AutoField(primary_key=True)
-    uniqueId = models.CharField(max_length=50, unique=True)
+    uniqueId = models.CharField(max_length=50, unique=True, blank=True)
     admNumber = models.CharField(max_length=255)
     schoolCode = models.CharField(max_length=50, null=True, blank=True)
     firstName = models.CharField(max_length=255)
@@ -21,6 +23,23 @@ class Students(models.Model):
     parentID = models.IntegerField()
     upiNumber = models.CharField(max_length=255)
     urls = models.CharField(max_length=500)
+
+    def save(self, *args, **kwargs):
+        if not self.admNumber:
+            self.admNumber = self.generate_admission_number()
+        if not self.uniqueId:
+            self.uniqueId = self.generate_unique_id()
+        super(Students, self).save(*args, **kwargs)
+
+    def generate_admission_number(self):
+        # Generate a unique admission number (e.g., UUID)
+        return str(uuid.uuid4()).split('-')[0]
+
+    def generate_unique_id(self):
+        # Combine the school code with the admission number to generate a unique ID
+        return f'{self.schoolCode}-{self.admNumber}'
+
+
 
     def __str__(self):
         return f"{self.firstName} {self.middleName} {self.lastName}"

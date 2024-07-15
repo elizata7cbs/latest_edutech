@@ -60,6 +60,9 @@ class Helpers:
             if not Schools.objects.filter(school_code=school_code).exists():
                 return school_code
 
+
+
+
     def generateSchoolId(self):
         pass
 

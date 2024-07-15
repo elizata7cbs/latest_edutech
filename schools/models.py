@@ -87,7 +87,7 @@ class Schools(models.Model):
         return self.name
 
 class SchoolAdmin(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='school_admin')
+    # user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='school_admin')
     school = models.ForeignKey(Schools, on_delete=models.CASCADE, related_name='admin')
     title = models.CharField(max_length=10, default='Mr', choices=(
         ('MR', 'Mr'),

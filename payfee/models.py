@@ -7,7 +7,7 @@ class Payments(models.Model):
     student = models.ForeignKey(Students, on_delete=models.CASCADE, to_field='uniqueId')  # Use uniqueId
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
     paymentmode = models.CharField(max_length=100)
-    phone_number = models.CharField(max_length=250)
+    phone_number = models.CharField(max_length=250, null=True, blank=True)
     payment_date = models.DateField(auto_now_add=True)
     reference = models.CharField(max_length=255)
 

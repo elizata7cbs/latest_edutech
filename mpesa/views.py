@@ -1,9 +1,13 @@
 import base64
+import json
 from datetime import datetime
 
 import requests
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from rest_framework import viewsets
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 
 from edutech_payment_engine.settings import *
@@ -23,40 +27,6 @@ class Mpesa(viewsets.ViewSet):
         i.setEntity(response)
         i.setStatusCode(200)
         return Response(i.toDict(), 200)
-
-    @csrf_exempt
-    def mpesa_callback(self, request):  # Update method signature to accept request
-        callback_data = request.data
-
-        # Check if the necessary keys are present in the callback data
-        if 'Body' in callback_data and 'stkCallback' in callback_data['Body']:
-            # Extract relevant data from callback_data
-            stk_callback = callback_data['Body']['stkCallback']
-            result_code = stk_callback.get('ResultCode', None)
-            if result_code is not None:
-                # Check the result code
-                if result_code != 0:
-                    # If the result code is not 0, there was an error
-                    error_message = stk_callback.get('ResultDesc', '')
-                    response_data = {'ResultCode': result_code, 'ResultDesc': error_message}
-                    return Response(response_data)
-                print(request.data)
-
-                # If the result code is 0, the transaction was completed
-                callback_metadata = stk_callback.get('CallbackMetadata', {})
-                amount = None
-                phone_number = None
-                for item in callback_metadata.get('Item', []):
-                    if item['Name'] == 'Amount':
-                        amount = item['Value']
-                    elif item['Name'] == 'PhoneNumber':
-                        phone_number = item['Value']
-
-                # Return a success response to the M-Pesa server
-                response_data = {'ResultCode': result_code, 'ResultDesc': 'Success'}
-                return Response(response_data)
-        # If the necessary keys are not present, return a bad request response
-        return Response({'error': 'Invalid callback data'}, status=400)
 
     @staticmethod
     def Push(phone, amount):  # Make Push method static
@@ -90,7 +60,7 @@ class Mpesa(viewsets.ViewSet):
             'PartyA': PartyA,
             'PartyB': BSS_SHORT_CODE,
             'PhoneNumber': PartyA,
-            'CallBackURL': 'https://3db4-102-210-244-74.ngrok-free.app/lipa_na_mpesa',
+            'CallBackURL': 'https://84e4-102-220-12-50.ngrok-free.app/api/v1/mpesa/mpesa_callback/',
             'AccountReference': AccountReference,
             'TransactionDesc': TransactionDesc
         }
@@ -99,3 +69,71 @@ class Mpesa(viewsets.ViewSet):
         stk_response = requests.post(INITIATE_URL, json=data, headers={'Authorization': 'Bearer ' + access_token})
 
         return stk_response.text
+
+@csrf_exempt
+@require_POST
+@api_view(['POST'])
+def call_back_url(request):
+    try:
+        # Parse the JSON data posted to the callback URL
+        mpesa_response = json.loads(request.body)
+
+        # Log the response to a file
+        log_file = "M_PESAConfirmationResponse.txt"
+        with open(log_file, "a") as log:
+            log.write(json.dumps(mpesa_response) + "\n")
+
+        print(mpesa_response)
+
+        # Extract the ResultCode
+        result_code = mpesa_response['Body']['stkCallback']['ResultCode']
+
+        if result_code == 0:
+            # Extract additional information from the CallbackMetadata
+            callback_metadata = mpesa_response['Body']['stkCallback']['CallbackMetadata']['Item']
+
+            # Initialize variables to store the extracted data
+            mpesa_receipt_number = transaction_date = phone_number = amount = None
+
+            # Iterate through the metadata to extract the required fields
+            for item in callback_metadata:
+                if item['Name'] == 'MpesaReceiptNumber':
+                    mpesa_receipt_number = item['Value']
+                elif item['Name'] == 'TransactionDate':
+                    transaction_date = item['Value']
+                elif item['Name'] == 'PhoneNumber':
+                    phone_number = item['Value']
+                elif item['Name'] == 'Amount':
+                    amount = item['Value']
+
+            # Print the extracted values
+            print("MpesaReceiptNumber:", mpesa_receipt_number)
+            print("TransactionDate:", transaction_date)
+            print("PhoneNumber:", phone_number)
+            print("Amount:", amount)
+
+            # Return the success response
+            response = {
+                "ResultCode": 0,
+                "ResultDesc": "Confirmation Received Successfully"
+            }
+            print(response)
+
+            return JsonResponse(response, status=200)
+        else:
+            # Return a response indicating that the transaction failed
+            response = {
+                "ResultCode": result_code,
+                "ResultDesc": "Transaction failed"
+            }
+            print(response)
+            return JsonResponse(response, status=400)
+
+    except json.JSONDecodeError:
+        print("Invalid JSON data")
+        return JsonResponse({"message": "Invalid JSON data"}, status=400)
+    except KeyError as e:
+        print(f"Missing key in JSON data: {e}")
+        return JsonResponse({"message": f"Missing key in JSON data: {e}"}, status=400)
+    except Exception as e:
+        return JsonResponse({"message": str(e)}, status=500)

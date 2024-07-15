@@ -33,11 +33,11 @@ class StudentsView(viewsets.ModelViewSet):
     serializer_class = StudentsSerializers
     pagination_class = StudentsPagination
 
-    @swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('schoolCode', openapi.IN_QUERY, description="schoolCode for filtering students", type=openapi.TYPE_STRING),
-        openapi.Parameter('stream', openapi.IN_QUERY, description="stream for filtering students", type=openapi.TYPE_STRING),
-        openapi.Parameter('grade', openapi.IN_QUERY, description="grade for filtering students", type=openapi.TYPE_INTEGER),
-    ])
+    # @swagger_auto_schema(manual_parameters=[
+    #     openapi.Parameter('schoolCode', openapi.IN_QUERY, description="schoolCode for filtering students", type=openapi.TYPE_STRING),
+    #     openapi.Parameter('stream', openapi.IN_QUERY, description="stream for filtering students", type=openapi.TYPE_STRING),
+    #     openapi.Parameter('grade', openapi.IN_QUERY, description="grade for filtering students", type=openapi.TYPE_INTEGER),
+    # ])
     def list(self, request, *args, **kwargs):
         paginator = self.pagination_class()
         schoolCode = request.query_params.get('schoolCode', None)
@@ -52,34 +52,53 @@ class StudentsView(viewsets.ModelViewSet):
         if grade:
             filters &= Q(grade=grade)
 
-        students = self.queryset.filter(filters)
-        page = paginator.paginate_queryset(students, request)
-        serializer = self.get_serializer(page, many=True)
-        return paginator.get_paginated_response(serializer.data)
+        # students = self.queryset.filter(filters)
+        students = Students.objects.all()
+        data = StudentsSerializers(students)
+
+        return Response (data.data, 200)
+        # page = paginator.paginate_queryset(students, request)
+        # serializer = self.get_serializer(page, many=True)
+        # return paginator.get_paginated_response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         response = ApiResponse()
-        helper = Helpers()
         StudentsData = StudentsSerializers(data=request.data)
-        uniqueid = helper.generateUniqueId('KSH099', '96758')
-        print(uniqueid)
+
         if not StudentsData.is_valid():
             status_code = status.HTTP_400_BAD_REQUEST
             return Response({"message": "Please fill in the details correctly.", "status": status_code}, status_code)
 
-        uniqueid = helper.generateUniqueId('KSH099', '96758')
-        print(uniqueid)
-        # StudentsData.save()
-        response.setStatusCode(status.HTTP_201_CREATED)
-        response.setMessage("Student created")
-        response.setEntity(request.data)
-        return Response(response.toDict(), status=response.status)
+        student = Students(
+            firstName=request.data.get('firstName'),
+            middleName=request.data.get('middleName'),
+            lastName=request.data.get('lastName'),
+            studentGender=request.data.get('studentGender'),
+            dob=request.data.get('dob'),
+            healthStatus=request.data.get('healthStatus'),
+            grade=request.data.get('grade'),
+            stream=request.data.get('stream'),
+            schoolStatus=request.data.get('schoolStatus'),
+            dormitory=request.data.get('dormitory'),
+            parentID=request.data.get('parentID'),
+            schoolCode=request.data.get('schoolCode'),
+            urls=request.data.get('urls', [])
+        )
+        student.save()
+
+        parent = Parents.objects.get(id=request.data.get('parentID'))
+
+        StudentsParents.objects.create(
+            parentID=parent,
+            studentID=student
+        )
+
+        response.setMessage("Student created successfully")
+        response.setStatusCode(200)
+
+        return Response(response.toDict(), 200)
 
     def destroy(self, request, *args, **kwargs):
-
-        studentData = Students.objects.filter(id=kwargs['pk'])
-        if studentData:
-            studentData.delete()
 
         studentData = Students.objects.filter(id=kwargs['pk'])
         if studentData:
@@ -92,11 +111,6 @@ class StudentsView(viewsets.ModelViewSet):
             return Response({"message": "Student data not found", "status": status_code})
 
     def update(self, request, *args, **kwargs):
-
-        students_details = Students.objects.get(id=kwargs['pk'])
-        students_serializer_data = StudentsSerializers(students_details, data=request.data, partial=True)
-        if students_serializer_data.is_valid():
-            students_serializer_data.save()
 
         students_details = Students.objects.get(id=kwargs['pk'])
         students_serializer_data = StudentsSerializers(students_details, data=request.data, partial=True)
@@ -177,7 +191,7 @@ class StudentsView(viewsets.ModelViewSet):
 
         print(urls)
 
-        Students.objects.create(
+        student = Students.objects.create(
             uniqueId=uniqueid,
             admNumber=request.data.get('admNumber'),
             firstName=request.data.get('firstName'),
@@ -192,12 +206,11 @@ class StudentsView(viewsets.ModelViewSet):
             schoolStatus=request.data.get('schoolStatus'),
             dormitory=request.data.get('dormitory'),
             parentID=request.data.get('parentID'),
-            schoolCode=request.data.get('schoolCode'),
+            upiNumber=request.data.get('upiNumber'),
             urls=urls
         )
 
         parent = Parents.objects.get(id=request.data.get('parentID'))
-        student = Students.objects.last()
 
         StudentsParents.objects.create(
             parentID=parent,
@@ -208,3 +221,22 @@ class StudentsView(viewsets.ModelViewSet):
         response.setStatusCode(200)
 
         return Response(response.toDict(), 200)
+
+    @action(detail=False, methods=['GET'])
+    @permission_classes([AllowAny])
+    def check_student_exists(self, request):
+        admNumber = request.query_params.get('admNumber')
+        schoolCode = request.query_params.get('schoolCode')
+
+        if not admNumber or not schoolCode:
+            return Response({
+                "message": "admNumber and schoolCode are required parameters",
+                "status_code": status.HTTP_400_BAD_REQUEST
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        student_exists = Students.objects.filter(admNumber=admNumber, schoolCode=schoolCode).exists()
+
+        return Response({
+            "student_exists": student_exists,
+            "status_code": status.HTTP_200_OK
+        }, status=status.HTTP_200_OK)

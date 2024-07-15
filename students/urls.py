@@ -9,8 +9,9 @@ router.register(r'', StudentsView, basename='')
 
 
 urlpatterns = [
-    path('', include(router.urls)),
+    # path('', include(router.urls)),
     path('students/create/', StudentsView.as_view({'post': 'createStudent'}), name='createStudent'),
+    path('students/list/', StudentsView.as_view({'get': 'list'}), name='listStudent'),
     # path('find/', StudentsView.as_view({'post': 'findFiles'}), name='findFiles'),
     path('upload/', StudentsView.as_view({'post': 'uploadFile'}), name='uploadFile'),
     path('students/create/', StudentsView.as_view({'post': 'createStudent'}), name='createStudent'),

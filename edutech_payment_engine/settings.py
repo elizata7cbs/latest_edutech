@@ -41,8 +41,7 @@ SECRET_KEY = 'django-insecure-b5prd^t6_@jdhb=n9d0yo4=!sy9_5qs@3!%%nu@tc((bv)5%!b
 DEBUG = True
 inProd = False
 
-ALLOWED_HOSTS = ["*"
-                 ]
+ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:4200',
@@ -66,38 +65,39 @@ INSTALLED_APPS = [
     'account',
     'users',
     'students',
-    'studentsschools',
     'parents',
     'studentsparents',
     'authuser',
-    'paymentgroups',
     'paymentmodes',
     'feecategories',
     'feepayments',
-    'feeextensions',
     'expensetypes',
+    'expensepayment',
     'expenses',
      'suppliers',
-    'supplierspayment',
+    # 'supplierspayment',
     'fee',
     'feecollections',
     'notifications',
     'uniqueids',
     'schools',
-    'virtualaccounts',
+    # 'virtualaccounts',
     'payfee',
     'inquiries',
     'usergroup',
-    'mpesa'
+    # 'parents',
+    'transactions',
+    'mpesa',
+    'allfees'
 
 ]
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
+    # 'DEFAULT_AUTHENTICATION_CLASSES': (
+    #     'rest_framework_simplejwt.authentication.JWTAuthentication',
+    # ),
+    #  'DEFAULT_PERMISSION_CLASSES': (
+    #      'rest_framework.permissions.IsAuthenticated',
+    #  ),
 }
 
 SIMPLE_JWT = {
@@ -259,7 +259,7 @@ STATICFILES_DIRS = [
 
 STATIC_URL = '/static/'
 AUTH_USER_MODEL = 'users.CustomUser'
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True
 
 if not DEBUG:
     STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -273,4 +273,4 @@ BSS_SHORT_CODE = "174379"
 PASS_KEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
 ACCESS_TOKEN_URL = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
 INITIATE_URL = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
-CALL_BACK_URL = "https://3db4-102-210-244-74.ngrok-free.app /MpesaCallBackURL.php"
+CALL_BACK_URL = "https://3db4-102-210-244-74.ngrok-free.app/MpesaCallBackURL.php"

@@ -26,8 +26,8 @@ from utils.decorators import allowed_users
 
 
 class CustomUserView(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [JWTAuthentication]
+    # permission_classes = [IsAuthenticated]
+    # authentication_classes = [JWTAuthentication]
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
 
