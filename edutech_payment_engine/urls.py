@@ -25,8 +25,10 @@ urlpatterns = [
     path('api/v1/studentsparents/', include('studentsparents.urls')),
     path('api/v1/expenses/', include('expenses.urls')),
     path('api/v1/schools/', include('schools.urls')),
+    path('api/v1/payfee/', include('payfee.urls')),
     path('api/v1/parents/', include('parents.urls')),
     path('api/v1/feecategories/', include('feecategories.urls')),
+    path('api/v1/feecollections/', include('feecollections.urls')),
     path('api/v1/expensetypes/', include('expensetypes.urls')),
     path('api/v1/expensepayment/', include('expensepayment.urls')),  # Add this line
     path("api/v1/auth/", include("authuser.urls")),
