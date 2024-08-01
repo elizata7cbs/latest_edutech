@@ -3,7 +3,7 @@ from rest_framework import routers
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .views import CustomUserView, PermissionsView
+from .views import CustomUserView, PermissionsView, LoginView, SendOTPView
 
 router = DefaultRouter()
 router.register(r'', CustomUserView, basename='')
@@ -22,4 +22,8 @@ urlpatterns = [
     path('retrieve/<int:pk>', CustomUserView.as_view({'get': 'retrieve'}), name='retrieve'),
     path('deactivate/<str:email>', CustomUserView.as_view({'post': 'deactivate'}), name='deactivate'),
     path('update_profile/', CustomUserView.as_view({'put': 'update_profile'}), name='update_profile'),
+
+    # path('login/', SendOTPView.as_view(), name='login'),
+    path('login/', LoginView.as_view(), name='login'),
+
 ]

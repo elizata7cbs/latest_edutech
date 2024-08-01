@@ -42,7 +42,7 @@ class FeeCategoriesView(viewsets.ModelViewSet):
         response.setStatusCode(status.HTTP_200_OK)
         response.setMessage("Found")
         response.setEntity(data)
-        return Response(response.toDict(), status=response.status)
+        return Response( data, status=response.status)
 
     def list_virtual_account(self, request, *args, **kwargs):
         response = ApiResponse()

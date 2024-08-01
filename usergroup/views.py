@@ -1,13 +1,10 @@
 from django.contrib.auth.models import Group, Permission
-from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 
 from usergroup.models import UserGroup
 from usergroup.serializers import UserGroupSerializers
 from utils.ApiResponse import ApiResponse
-from utils.decorators import allowed_users
 
 
 # Create your views here.

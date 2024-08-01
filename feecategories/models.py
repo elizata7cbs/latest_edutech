@@ -4,14 +4,9 @@ from django.db import models
 class FeeCategories(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    categorycode = models.CharField(max_length=200)
-    description = models.CharField(max_length=1000)
-    grade = models.CharField(max_length=100, choices=(
-        ('PRIMARY', 'Primary'),
-        ('SECONDARY', 'Secondary'),
-        ('TERTIARY', 'Tertiary'),
-        ('OTHER', 'Other'),
-    ))
+    categorycode = models.CharField(max_length=200, null=True, blank=True)
+    description = models.CharField(max_length=1000, null=True, blank=True)
+    grade = models.IntegerField()
     term = models.CharField(max_length=12, choices=(
         ('Term1', 'Term1'),
         ('Term2', 'Term2'),

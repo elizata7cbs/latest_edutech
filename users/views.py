@@ -1,46 +1,35 @@
-from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import Group, Permission
 from django.db.models import Q, F
-from django.http import HttpResponse
-from django.shortcuts import render, get_object_or_404
-from django.utils.decorators import method_decorator
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets, permissions
+from django.shortcuts import get_object_or_404
+from rest_framework import viewsets
 from rest_framework import status
-from rest_framework.decorators import permission_classes, api_view
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from rest_framework.schemas import openapi
-from rest_framework_simplejwt.authentication import JWTAuthentication
-
+from rest_framework.views import APIView
 
 from users.models import CustomUser
+from users.permission_filter import allowed_users, allowed_groups
+from users.serializers.LoginViewSerializer import LoginViewSerializer
+from users.serializers.MyTokenObtainSerializer import MyTokenObtainPairSerializer
 from users.serializers.givepermissionsserializer import givePermissionsSerializer
 from users.serializers.serializers import CustomUserSerializer
 from users.serializers.userpermissionserializer import PermissionsSerializer
 from utils.ApiResponse import ApiResponse
-from utils.decorators import allowed_users
 
-
-# Create your views here.
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 
 class CustomUserView(viewsets.ModelViewSet):
-    # permission_classes = [IsAuthenticated]
-    # authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
 
-    # @method_decorator(allowed_users(allowed_roles=['manager']))
+    @allowed_groups(allowed_groups=['superuser'])
     def list(self, request, *args, **kwargs):
-        print("The user ", request.user.username)
-        response = ApiResponse()
         data = CustomUser.objects.all()
-
         modified_data = []
-
         for instance in data:
-            roles = [group.name for group in instance.groups.all()]  # Retrieve user's groups as roles
+            roles = [group.name for group in instance.groups.all()]
 
             modified_object = {
                 "id": instance.id,
@@ -50,7 +39,6 @@ class CustomUserView(viewsets.ModelViewSet):
                 "is_staff": instance.is_staff,
                 "is_active": instance.is_active,
                 "username": instance.username,
-                "password": instance.password,
                 "email": instance.email,
                 "first_name": instance.first_name,
                 "last_name": instance.last_name,
@@ -60,15 +48,10 @@ class CustomUserView(viewsets.ModelViewSet):
                 "nationality": instance.nationality,
                 "address": instance.address,
                 "school_name": instance.schools.name,
-                "roles": roles,  # Assign user's groups as roles
+                "roles": roles,
             }
-
             modified_data.append(modified_object)
-
-        response.setStatusCode(status.HTTP_200_OK)
-        response.setMessage("Found")
-        response.setEntity(modified_data)
-        return Response(response.toDict(), status=response.status)
+        return Response(modified_data, status=status.HTTP_200_OK)
 
     # @permission_classes([IsAuthenticated])
     def retrieve(self, request, *args, **kwargs):
@@ -267,3 +250,19 @@ class PermissionsView(viewsets.ModelViewSet):
                 return Response({"message": "Group not found."}, status=status.HTTP_404_NOT_FOUND)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SendOTPView(APIView):
+    serializer_class = LoginViewSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data['user']
+        return Response({'email': user.email}, status=status.HTTP_200_OK)
+
+
+class LoginView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer

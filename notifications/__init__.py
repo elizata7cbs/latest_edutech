@@ -1,4 +1,0 @@
-def serializers():
-    return None
-
-

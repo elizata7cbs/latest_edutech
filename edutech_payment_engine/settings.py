@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 import os
 from pathlib import Path
-import dj_database_url
 from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -62,7 +61,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'drf_yasg',
-    'account',
     'users',
     'students',
     'parents',
@@ -70,34 +68,25 @@ INSTALLED_APPS = [
     'authuser',
     'paymentmodes',
     'feecategories',
-    'feepayments',
     'expensetypes',
-    'expensepayment',
+    'transactions',
     'expenses',
-     'suppliers',
-    # 'supplierspayment',
-    'fee',
-    'feecollections',
-    'notifications',
-    'uniqueids',
+    'suppliers',
+     'fee',
     'schools',
-    # 'virtualaccounts',
     'payfee',
     'inquiries',
     'usergroup',
-    # 'parents',
-    'transactions',
     'mpesa',
     'allfees'
 
 ]
 REST_FRAMEWORK = {
-    # 'DEFAULT_AUTHENTICATION_CLASSES': (
-    #     'rest_framework_simplejwt.authentication.JWTAuthentication',
-    # ),
-    #  'DEFAULT_PERMISSION_CLASSES': (
-    #      'rest_framework.permissions.IsAuthenticated',
-    #  ),
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10
 }
 
 SIMPLE_JWT = {
@@ -120,7 +109,11 @@ SIMPLE_JWT = {
     'JTI_CLAIM': 'jti',
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=30),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+    # 'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+    # 'SLIDING_TOKEN_USE_REFRESH_TOKEN': True,
+    # 'SLIDING_TOKEN_IGNORE_REFRESH_TOKEN_ON_AUTH': False,
+    # 'SLIDING_TOKEN_STRATEGY': 'rest_framework_simplejwt.authentication.SlidingTokenAuthentication',
+    # 'SLIDING_TOKEN_REFRESH_STRATEGY': 'rest_framework_simplejwt.authentication.SlidingTokenRefreshAuthentication',
 }
 
 SWAGGER_SETTINGS = {
@@ -130,6 +123,10 @@ SWAGGER_SETTINGS = {
             'name': 'Authorization',
             'in': 'header'
         }
+    },
+    'DEFAULT_INFO': {
+        'description': 'Edu-pay Authorization',
+        'version': '1.0',
     },
     'USE_SESSION_AUTH': False,
     'JSON_EDITOR': True,
@@ -173,30 +170,21 @@ WSGI_APPLICATION = 'edutech_payment_engine.wsgi.application'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
 
-if inProd:
-    DATABASES = {
-        'default': dj_database_url.config(
-            # Replace this value with your local database's connection string.
-            default='postgres://edutech_s1pi_user:RPaUbLjei1XXW6gI4EQS1ZzaKLYGRunU@dpg-cnio1q7jbltc73c6k4d0-a.oregon'
-                    '-postgres.render.com/edutech_s1pi',
-            conn_max_age=600
-        )
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'jaribio_db',
+        'USER': 'root',
+        'PASSWORD': "",
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        },
+    }
+}
 
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'edutech_payments_db',
-            'USER': 'root',
-            'PASSWORD': "",
-            'HOST': '127.0.0.1',
-            'PORT': '3306',
-            'OPTIONS': {
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            },
-        }
-    }
+AUTH_USER_MODEL = 'users.CustomUser'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -274,3 +262,32 @@ PASS_KEY = "bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919"
 ACCESS_TOKEN_URL = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
 INITIATE_URL = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
 CALL_BACK_URL = "https://3db4-102-210-244-74.ngrok-free.app/MpesaCallBackURL.php"
+
+# SUPERUSER DATA
+SUPERUSER_USERNAME = 'superuser'
+SUPERUSER_PASSWORD = 'superuser'
+SUPERUSER_EMAIL = 'elizatasha18@gmail.com'
+SUPERUSER_FIRST_NAME = 'Superuser'
+SUPERUSER_LAST_NAME = 'Edupay'
+SUPERUSER_PHONE_NUMBER = '254711223344'
+
+# SCHOOLS DATA
+SCHOOL_NAME = 'Dummy School'
+SCHOOL_CODE = 'DS001'
+COUNTRY = 'Kenya'
+COUNTRY_CODE = 'KE'
+COUNTY = 'Nairobi'
+SUB_COUNTY = 'Westlands'
+CITY = 'Nairobi'
+STREET_ADDRESS = '123 Fake Street'
+POSTAL_CODE = '00100'
+
+PHONE_NUMBER1 = '0712345678'
+PHONE_NUMBER2 = '0722345678'
+PHONE_NUMBER_COUNTRY_CODE = '254'
+EMAIL_ADDRESS = 'dummy@school.com'
+WEBSITE = 'http://www.dummyschool.com'
+REGISTRATION_NUMBER = 'REG123456'
+SCHOOL_TYPE = 'PRIMARY'
+BOARDING_STATUS = 'DAY'
+CURRENCY = 'KES'

@@ -6,30 +6,35 @@ from django.core.exceptions import ValidationError
 from django.db.models import Sum, F
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
-from account.models import Account
 from expenses.models import Expenses
 from fee.models import StudentFeeCategories, FeeCategoryTransaction
 from feecategories.models import FeeCategories, VirtualAccount
+# from notifications.models import EmailRecord
+from parents.models import Parents
 
 from payfee.models import Payments, RecordTransaction
 from django.db import models
 
+# from reconciliation.models import UploadedFile
 from schools.models import Schools
+from studentsparents.models import StudentsParents
 from suppliers.models import Suppliers, SuppliersAccount
 
-# from supplierspayment.models import SuppliersPayment
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.core.mail import send_mail
+from django.conf import settings
+from parents.models import Parents
+from payfee.models import RecordTransaction
+from studentsparents.models import StudentsParents
+from django.db.models import Sum
 # Manually configure Django settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'edutech_payment_engine.settings')
 django.setup()
 import os
 import random
-
 from django.core.mail import send_mail
-
-from rest_framework import status
-
+from rest_framework import status, response
 from edutech_payment_engine.settings import BASE_DIR
 from authuser.models import OTP
 from datetime import timedelta, datetime, date
@@ -38,9 +43,59 @@ from django.utils import timezone
 from students.models import Students, StudentAccount
 
 
+#validate the document before uploading
 class Helpers:
+    def validate_file(self, file):
+        ext = os.path.splitext(file.name)[1].lower()
+        valid_extensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx']
+        if ext not in valid_extensions:
+            return False, "Unsupported file extension."
+        return True, None
 
-    def __init__(self):
+    #send emails to all parents with balances
+    # @receiver(post_save, sender=EmailRecord)
+    # def send_email_and_calculate_balances(sender, instance, **kwargs):
+    #     subject = instance.subject
+    #     message_text = instance.message
+    #
+    #     parents = Parents.objects.all()
+    #     for parent in parents:
+    #         studentsparents_records = StudentsParents.objects.filter(parentID=parent)
+    #         students_data = []
+    #         for record in studentsparents_records:
+    #             student = record.studentID
+    #
+    #             # Calculate the total debit and credit for the specified student
+    #             total_debit = RecordTransaction.objects.filter(student_id=student.id).aggregate(Sum('debit'))[
+    #                               'debit__sum'] or 0
+    #             total_credit = RecordTransaction.objects.filter(student_id=student.id).aggregate(Sum('credit'))[
+    #                                'credit__sum'] or 0
+    #
+    #             # Calculate the total balance
+    #             total_balance = total_debit - total_credit
+    #
+    #             student_data = {
+    #                 'firstName': student.firstName,
+    #                 'lastName': student.lastName,
+    #                 'balance': total_balance,
+    #             }
+    #             students_data.append(student_data)
+    #
+    #         # Construct the message content
+    #         message_content = f"{message_text}\n\n"
+    #         message_content += "Here are the details of your children:\n"
+    #         for student in students_data:
+    #             message_content += f"{student['firstName']} {student['lastName']}: Balance - {student['balance']}\n"
+    #
+    #         send_mail(
+    #             subject,
+    #             message_content,
+    #             settings.DEFAULT_FROM_EMAIL,
+    #             [parent.email],
+    #             fail_silently=False,
+    #         )
+
+    def _init_(self):
         self.schools_counter = {}
 
     def generateSchoolCode(self, name):
@@ -62,9 +117,15 @@ class Helpers:
 
 
 
-
     def generateSchoolId(self):
         pass
+
+    # def perform_search(self,search_query):
+    #     # Implement your search logic here
+    #     # For example, you could search a database or external API based on the query
+    #     # Return the search results
+    #     # This is just a placeholder example
+    #     return ['result1', 'result2', 'result3']
 
     # create school code
     def generateSchoolId(self, school_name, country_code):
@@ -101,8 +162,17 @@ class Helpers:
         unique = f'{schoolCode}-{admNumber}'
         return str(unique)
 
-    def generatecategorycode(self, name, description):
-        categorycode = f'{name}-{description}'
+    # generate category code
+    def category_code(self, name):
+        # Get the first two letters of the category name
+        prefix = name[:2].lower()
+
+        # Generate a random three-digit number
+        random_numbers = ''.join(random.choices('0123456789', k=3))
+
+        # Combine the prefix and random numbers to create the category code
+        categorycode = f"{prefix}{random_numbers}"
+
         return categorycode
 
     def create_student_fee_categories(self):
@@ -304,28 +374,28 @@ class Helpers:
                 )
                 return fee_payment
 
-            def generate_receipt_number(sender, instance, **kwargs):
-                from feecollections.models import FeeCollections
-                if not instance.receipt_number:
-                    school_code = instance.school.school_code
-                    receipts_count = FeeCollections.objects.filter(school=instance.school).count()
-
-                    # Determine the starting point for receipt numbers
-                    starting_number = receipts_count + 1
-
-                    # Generate receipt number
-                    if starting_number <= 10:
-                        instance.receipt_number = f"{school_code}-FEE-{starting_number:02d}"
-                    else:
-                        last_receipt = FeeCollections.objects.filter(school=instance.school).order_by('-id').first()
-                        last_receipt_number = last_receipt.receipt_number.split('-')[2]
-                        last_receipt_number = int(last_receipt_number) + 1
-                        while True:
-                            receipt_number = f"{school_code}-FEE-{last_receipt_number:02d}"
-                            if not FeeCollections.objects.filter(receipt_number=receipt_number).exists():
-                                instance.receipt_number = receipt_number
-                                break
-                            last_receipt_number += 1
+            # def generate_receipt_number(sender, instance, **kwargs):
+            #     from feecollections.models import FeeCollections
+            #     if not instance.receipt_number:
+            #         school_code = instance.school.school_code
+            #         receipts_count = FeeCollections.objects.filter(school=instance.school).count()
+            #
+            #         # Determine the starting point for receipt numbers
+            #         starting_number = receipts_count + 1
+            #
+            #         # Generate receipt number
+            #         if starting_number <= 10:
+            #             instance.receipt_number = f"{school_code}-FEE-{starting_number:02d}"
+            #         else:
+            #             last_receipt = FeeCollections.objects.filter(school=instance.school).order_by('-id').first()
+            #             last_receipt_number = last_receipt.receipt_number.split('-')[2]
+            #             last_receipt_number = int(last_receipt_number) + 1
+            #             while True:
+            #                 receipt_number = f"{school_code}-FEE-{last_receipt_number:02d}"
+            #                 if not FeeCollections.objects.filter(receipt_number=receipt_number).exists():
+            #                     instance.receipt_number = receipt_number
+            #                     break
+            #                 last_receipt_number += 1
 
         # def generate_receipt_and_save_payment(school_code, payment_data):
         #     from feecollections.models import FeeCollections

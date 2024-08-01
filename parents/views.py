@@ -2,8 +2,6 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-
-from feepayments.models import FeePayments
 from parents.models import Parents
 from parents.serializers import ParentsCreateSerializers, ParentsLoginSerializers
 from students.models import Students

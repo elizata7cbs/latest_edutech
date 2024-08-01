@@ -1,7 +1,7 @@
 from django.db import models
 from decimal import Decimal
 from django.utils.crypto import get_random_string
-from account.models import Account
+
 from expensetypes.models import ExpenseTypes
 
 
