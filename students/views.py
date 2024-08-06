@@ -23,43 +23,16 @@ from rest_framework.pagination import PageNumberPagination
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 
-class StudentsPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
 class StudentsView(viewsets.ModelViewSet):
     queryset = Students.objects.all()
     serializer_class = StudentsSerializers
-    pagination_class = StudentsPagination
-
-    # @swagger_auto_schema(manual_parameters=[
-    #     openapi.Parameter('schoolCode', openapi.IN_QUERY, description="schoolCode for filtering students", type=openapi.TYPE_STRING),
-    #     openapi.Parameter('stream', openapi.IN_QUERY, description="stream for filtering students", type=openapi.TYPE_STRING),
-    #     openapi.Parameter('grade', openapi.IN_QUERY, description="grade for filtering students", type=openapi.TYPE_INTEGER),
-    # ])
     def list(self, request, *args, **kwargs):
-        paginator = self.pagination_class()
-        schoolCode = request.query_params.get('schoolCode', None)
-        stream = request.query_params.get('stream', None)
-        grade = request.query_params.get('grade', None)
-
-        filters = Q()
-        if schoolCode:
-            filters &= Q(schoolCode=schoolCode)
-        if stream:
-            filters &= Q(stream=stream)
-        if grade:
-            filters &= Q(grade=grade)
-
-        # students = self.queryset.filter(filters)
-        students = Students.objects.all()
-        data = StudentsSerializers(students)
-
-        return Response (data.data, 200)
-        # page = paginator.paginate_queryset(students, request)
-        # serializer = self.get_serializer(page, many=True)
-        # return paginator.get_paginated_response(serializer.data)
+        response = ApiResponse()
+        data = list(Students.objects.all().values())
+        response.setStatusCode(status.HTTP_200_OK)
+        response.setMessage("Found")
+        response.setEntity(data)
+        return Response(response.toDict(), status=response.status)
 
     def create(self, request, *args, **kwargs):
         response = ApiResponse()
