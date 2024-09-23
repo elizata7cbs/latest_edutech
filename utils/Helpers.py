@@ -204,6 +204,10 @@ class Helpers:
     def generateUniqueexpenseid(self):
         pass
 
+    def generatecategorycode(self, name, description):
+        categorycode = f'{name}-{description}'
+        return categorycode
+
     def generateUniquefeepaymentid(self):
         pass
 

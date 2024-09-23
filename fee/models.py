@@ -26,6 +26,9 @@ class FeeCategoryTransaction(models.Model):
     credit = models.DecimalField(max_digits=10, decimal_places=2)
     balance = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     transaction_date = models.DateField(auto_now_add=True)
+    firstName =models.CharField(max_length=255, blank=True)
+    middleName = models.CharField(max_length=255, blank=True)
+
 
     def save(self, *args, **kwargs):
         # Calculate the balance if not set

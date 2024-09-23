@@ -173,7 +173,7 @@ WSGI_APPLICATION = 'edutech_payment_engine.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'jaribio_db',
+        'NAME': 'kazi_db',
         'USER': 'root',
         'PASSWORD': "",
         'HOST': '127.0.0.1',
